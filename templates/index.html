@@ -1,0 +1,848 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>{{ project_title }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <header class="navbar" id="home">
+        <div class="container nav-container" style="max-width: 100%; padding: 0 24px;">
+            <div class="brand">
+                <button type="button" class="mobile-nav-toggle" id="mobile-toggle-btn" aria-label="Toggle navigation">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="3" y1="12" x2="21" y2="12"></line>
+                        <line x1="3" y1="6" x2="21" y2="6"></line>
+                        <line x1="3" y1="18" x2="21" y2="18"></line>
+                    </svg>
+                </button>
+                <div class="brand-logo">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z"></path>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-name">Automated Image Preprocessing System</span>
+                    <span class="brand-sub">Using AWS Cloud Infrastructure</span>
+                </div>
+            </div>
+
+            <!-- Status Indicator -->
+            <div class="nav-status">
+                <span class="status-indicator">
+                    <span class="status-dot"></span>
+                    <span id="backend-status-pill">Backend Status: {{ backend_status }}</span>
+                </span>
+                <span class="aws-indicator" title="AWS Target Region: Mumbai">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                    </svg>
+                    AWS S3 & RDS: {{ 'Active' if storage_backend == 's3' else 'Configured' }} ({{ aws_region }})
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Dashboard Main Shell -->
+    <div class="dashboard-shell">
+
+        <!-- Sidebar Navigation -->
+        <aside class="dashboard-sidebar" id="dashboard-sidebar">
+            <span class="sidebar-title">Navigation</span>
+            <a class="sidebar-nav-link active" data-view="dashboard" id="nav-item-dashboard">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="3" width="7" height="7"></rect>
+                    <rect x="14" y="14" width="7" height="7"></rect>
+                    <rect x="3" y="14" width="7" height="7"></rect>
+                </svg>
+                <span>Dashboard</span>
+            </a>
+
+            <a class="sidebar-nav-link" data-view="upload" id="nav-item-upload">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                    <polyline points="17 8 12 3 7 8"></polyline>
+                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                </svg>
+                <span>Upload Image</span>
+            </a>
+
+            <a class="sidebar-nav-link" data-view="images" id="nav-item-images">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                    <polyline points="21 15 16 10 5 21"></polyline>
+                </svg>
+                <span>All Images</span>
+                <span class="sidebar-badge" id="nav-badge-count">0</span>
+            </a>
+
+            <a class="sidebar-nav-link" data-view="results" id="nav-item-results">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                <span>Processing Results</span>
+            </a>
+
+            <a class="sidebar-nav-link" data-view="health" id="nav-item-health">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+                </svg>
+                <span>System Health</span>
+            </a>
+        </aside>
+
+        <!-- Main Workspace Area -->
+        <main class="dashboard-main-content">
+
+            <!-- =================================================================== -->
+            <!-- VIEW 1: DASHBOARD OVERVIEW -->
+            <!-- =================================================================== -->
+            <div class="dashboard-view-panel active" id="view-dashboard">
+                <div class="view-header">
+                    <div>
+                        <h1 class="view-header-title">System Dashboard</h1>
+                        <p class="view-header-sub">Real-time image ingestion, processing statistics, and cloud performance metrics.</p>
+                    </div>
+                    <button type="button" class="header-action-btn" id="btn-refresh-dashboard">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh Stats
+                    </button>
+                </div>
+
+                <!-- 4 Summary Cards -->
+                <div class="summary-cards-grid">
+                    <!-- Card 1: Total Images -->
+                    <div class="summary-card card-total">
+                        <div class="summary-card-header">
+                            <span class="summary-card-label">Total Images</span>
+                            <div class="summary-card-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+                                    <circle cx="8.5" cy="8.5" r="1.5"></circle>
+                                    <polyline points="21 15 16 10 5 21"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="summary-card-value" id="stat-total-images">0</div>
+                        <div class="summary-card-subtext">
+                            <span>Tracked in Amazon RDS MySQL</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 2: Successfully Processed -->
+                    <div class="summary-card card-completed">
+                        <div class="summary-card-header">
+                            <span class="summary-card-label">Successfully Processed</span>
+                            <div class="summary-card-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                    <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="summary-card-value" id="stat-completed-images">0</div>
+                        <div class="summary-card-subtext">
+                            <span>Status COMPLETED in S3 processed/</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 3: Pending / Processing -->
+                    <div class="summary-card card-pending">
+                        <div class="summary-card-header">
+                            <span class="summary-card-label">Pending / Processing</span>
+                            <div class="summary-card-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <polyline points="12 6 12 12 16 14"></polyline>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="summary-card-value" id="stat-pending-images">0</div>
+                        <div class="summary-card-subtext">
+                            <span>In-flight AWS Lambda execution</span>
+                        </div>
+                    </div>
+
+                    <!-- Card 4: Failed Processing -->
+                    <div class="summary-card card-failed">
+                        <div class="summary-card-header">
+                            <span class="summary-card-label">Failed Processing</span>
+                            <div class="summary-card-icon">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <line x1="12" y1="8" x2="12" y2="12"></line>
+                                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="summary-card-value" id="stat-failed-images">0</div>
+                        <div class="summary-card-subtext">
+                            <span>Corrupt files or upload errors</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Preview Table Card -->
+                <div class="table-card">
+                    <div class="table-toolbar">
+                        <div class="toolbar-title">
+                            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <circle cx="12" cy="12" r="10"></circle>
+                                <polyline points="12 6 12 12 16 14"></polyline>
+                            </svg>
+                            Recent Uploads
+                        </div>
+                        <button type="button" class="btn-table-action" id="btn-goto-all-images">
+                            View All Images &rarr;
+                        </button>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Filename</th>
+                                    <th>Image ID</th>
+                                    <th>Upload Date</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dashboard-recent-table-body">
+                                <tr>
+                                    <td colspan="6" class="empty-state">
+                                        <div class="empty-state-title">Loading recent images...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- AWS Cloud Architecture Stack (Preserved from Module 1) -->
+                <section class="architecture-section" id="architecture-section">
+                    <div class="section-header">
+                        <h2 class="section-title">AWS Cloud Architecture Stack</h2>
+                        <p class="section-description">
+                            Production-grade infrastructure components powering image ingestion, storage, serverless processing, and transactional metadata:
+                        </p>
+                    </div>
+
+                    <div class="cards-grid">
+                        <!-- Card 1: EC2 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="service-icon ec2-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect>
+                                        <rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect>
+                                        <line x1="6" y1="6" x2="6.01" y2="6"></line>
+                                        <line x1="6" y1="18" x2="6.01" y2="18"></line>
+                                    </svg>
+                                </div>
+                                <span class="card-tag tag-active">Compute Tier</span>
+                            </div>
+                            <h3 class="card-title">Amazon EC2</h3>
+                            <p class="card-text">
+                                Hosts the Flask 3.x WSGI web application, serving user interfaces, RESTful diagnostics, and coordinating image ingestion workflows.
+                            </p>
+                            <div class="card-footer">
+                                <span class="footer-label">Module 1 Status:</span>
+                                <span class="footer-value status-ready">Application Ready</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 2: S3 -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="service-icon s3-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                                        <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                                        <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                                    </svg>
+                                </div>
+                                <span class="card-tag tag-active">Storage Tier</span>
+                            </div>
+                            <h3 class="card-title">Amazon S3</h3>
+                            <p class="card-text">
+                                Scalable cloud object storage in ap-south-1 (Mumbai). Stores raw incoming images under uploads/ prefix with private access policies and presigned URLs.
+                            </p>
+                            <div class="card-footer">
+                                <span class="footer-label">Module 3 Status:</span>
+                                <span class="footer-value status-ready">S3 Integrated (ap-south-1)</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 3: RDS -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="service-icon rds-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <ellipse cx="12" cy="5" rx="9" ry="3"></ellipse>
+                                        <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path>
+                                        <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path>
+                                    </svg>
+                                </div>
+                                <span class="card-tag tag-active">Database Tier</span>
+                            </div>
+                            <h3 class="card-title">Amazon RDS</h3>
+                            <p class="card-text">
+                                Managed MySQL database storing image metadata, dimensions, processing stages, and execution audit logs with relational integrity.
+                            </p>
+                            <div class="card-footer">
+                                <span class="footer-label">Module 5 Status:</span>
+                                <span class="footer-value status-ready">RDS MySQL Integrated</span>
+                            </div>
+                        </div>
+
+                        <!-- Card 4: Lambda -->
+                        <div class="card">
+                            <div class="card-header">
+                                <div class="service-icon lambda-icon">
+                                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon>
+                                    </svg>
+                                </div>
+                                <span class="card-tag tag-active">Serverless Tier</span>
+                            </div>
+                            <h3 class="card-title">AWS Lambda</h3>
+                            <p class="card-text">
+                                Serverless event-driven compute triggered upon S3 object creation to perform non-blocking Pillow transformations, orientation correction, and 800x800 resizing.
+                            </p>
+                            <div class="card-footer">
+                                <span class="footer-label">Module 4 Status:</span>
+                                <span class="footer-value status-ready">Lambda Handler Active</span>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Badges Row for Modules (Preserving Module 1-5 assertions) -->
+                <div class="badges-row" style="margin-top: 32px;">
+                    <div class="hero-badge badge-completed">
+                        <span class="badge-icon">✓</span>
+                        <span>{{ module_title }}</span>
+                    </div>
+                    <div class="hero-badge badge-completed">
+                        <span class="badge-icon">✓</span>
+                        <span>{{ module2_title }}</span>
+                    </div>
+                    <div class="hero-badge badge-completed">
+                        <span class="badge-icon">✓</span>
+                        <span>{{ module3_title }}</span>
+                    </div>
+                    <div class="hero-badge badge-completed">
+                        <span class="badge-icon">✓</span>
+                        <span>{{ module4_title }}</span>
+                    </div>
+                    <div class="hero-badge badge-completed">
+                        <span class="badge-icon">✓</span>
+                        <span>{{ module5_title }}</span>
+                    </div>
+                    <div class="hero-badge badge-active">
+                        <span class="badge-pulse"></span>
+                        <span>{{ module6_title }}</span>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 2: UPLOAD IMAGE (Module 2 & 3 Upload Workspace) -->
+            <!-- =================================================================== -->
+            <div class="dashboard-view-panel" id="view-upload">
+                <div class="view-header">
+                    <div>
+                        <h1 class="view-header-title">Image Upload & Ingestion</h1>
+                        <p class="view-header-sub">Select and upload JPG or PNG images for automated cloud preprocessing.</p>
+                    </div>
+                </div>
+
+                <div class="upload-card">
+                    <div class="upload-card-header">
+                        <div class="header-content">
+                            <span class="section-tag">AWS Cloud Ingestion</span>
+                            <h2 class="upload-title">Upload Your Image</h2>
+                            <p class="upload-subtitle">Drag-and-drop or select an image to upload directly to S3.</p>
+                        </div>
+                        <div class="format-limits">
+                            <span class="limit-badge">JPG, JPEG, PNG</span>
+                            <span class="limit-badge">Max: {{ max_file_size_mb }} MB</span>
+                            <span class="limit-badge highlight">{{ 'Target: AWS S3' if storage_backend == 's3' else 'Target: Local' }}</span>
+                        </div>
+                    </div>
+
+                    <!-- Hidden File Input -->
+                    <input type="file" id="image-file-input" name="image" accept=".jpg,.jpeg,.png,image/jpeg,image/png" hidden>
+
+                    <!-- Drag and Drop Dropzone -->
+                    <div class="drop-zone" id="drop-zone">
+                        <div class="drop-zone-content">
+                            <div class="upload-icon-circle">
+                                <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                    <polyline points="17 8 12 3 7 8"></polyline>
+                                    <line x1="12" y1="3" x2="12" y2="15"></line>
+                                </svg>
+                            </div>
+                            <h3 class="drop-zone-title">Drag & drop your image here</h3>
+                            <p class="drop-zone-desc">Supported formats: <strong>JPG, JPEG, PNG</strong> (Up to 10 MB)</p>
+                            <button type="button" class="btn btn-browse" id="browse-btn">
+                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                    <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path>
+                                </svg>
+                                Browse Files
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Image Preview Container -->
+                    <div class="preview-card" id="preview-card" style="display: none;">
+                        <div class="preview-grid">
+                            <div class="preview-thumbnail-wrapper">
+                                <img id="preview-image" src="" alt="Image Preview" class="preview-thumbnail">
+                            </div>
+                            <div class="preview-details">
+                                <div class="preview-header">
+                                    <h4 class="preview-title" id="preview-filename">filename.jpg</h4>
+                                    <span class="preview-badge" id="preview-format">JPEG</span>
+                                </div>
+                                <div class="preview-meta">
+                                    <div class="meta-item">
+                                        <span class="meta-label">File Size:</span>
+                                        <span class="meta-value" id="preview-size">0 KB</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-label">MIME Type:</span>
+                                        <span class="meta-value" id="preview-mimetype">image/jpeg</span>
+                                    </div>
+                                    <div class="meta-item">
+                                        <span class="meta-label">Storage Backend:</span>
+                                        <span class="meta-value" id="preview-target-storage">{{ 'AWS S3 (Private Bucket)' if storage_backend == 's3' else 'Local Storage (instance/uploads/)' }}</span>
+                                    </div>
+                                </div>
+                                <div class="preview-actions">
+                                    <button type="button" class="btn btn-remove" id="remove-btn">
+                                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <polyline points="3 6 5 6 21 6"></polyline>
+                                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                            <line x1="10" y1="11" x2="10" y2="17"></line>
+                                            <line x1="14" y1="11" x2="14" y2="17"></line>
+                                        </svg>
+                                        Remove Image
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Upload Button & Action Controls -->
+                    <div class="upload-action-row">
+                        <button type="button" class="btn btn-upload" id="upload-btn" disabled>
+                            <span class="spinner" id="upload-spinner" style="display: none;"></span>
+                            <span id="upload-btn-text">Upload Image</span>
+                        </button>
+                        <span class="action-note" id="action-note">Select a valid image file to enable upload</span>
+                    </div>
+
+                    <!-- Status Flow Section -->
+                    <div class="status-tracker-section">
+                        <div class="status-steps">
+                            <div class="status-step" id="step-select">
+                                <span class="step-circle">1</span>
+                                <span class="step-label">Image selected</span>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="status-step" id="step-validate">
+                                <span class="step-circle">2</span>
+                                <span class="step-label">Validation successful</span>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="status-step" id="step-uploading">
+                                <span class="step-circle">3</span>
+                                <span class="step-label">Uploading</span>
+                            </div>
+                            <div class="step-line"></div>
+                            <div class="status-step" id="step-result">
+                                <span class="step-circle">4</span>
+                                <span class="step-label" id="step-result-label">Upload status</span>
+                            </div>
+                        </div>
+
+                        <!-- Live Status Notification Banner -->
+                        <div class="status-message-box" id="status-message-box" style="display: none;">
+                            <div class="message-icon" id="message-icon"></div>
+                            <div class="message-content">
+                                <div class="message-title" id="message-title">Status Title</div>
+                                <div class="message-text" id="message-text">Detailed message will appear here.</div>
+                            </div>
+                        </div>
+
+                        <!-- Successful Upload Result Card -->
+                        <div class="upload-result-card" id="upload-result-card" style="display: none;">
+                            <div class="result-header">
+                                <div class="result-badge-success" id="result-badge-header">Upload Completed</div>
+                                <span class="result-scope" id="result-backend-scope">AWS S3 Cloud Storage</span>
+                            </div>
+                            <div class="result-grid">
+                                <div class="result-item">
+                                    <span class="result-label">Upload Status:</span>
+                                    <span class="result-value highlight" id="res-status">S3_UPLOAD_COMPLETED</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Storage Backend:</span>
+                                    <span class="result-value" id="res-backend">AWS S3</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Original Filename:</span>
+                                    <span class="result-value" id="res-filename">-</span>
+                                </div>
+                                <div class="result-item">
+                                    <span class="result-label">Dimensions & Size:</span>
+                                    <span class="result-value" id="res-format-size">-</span>
+                                </div>
+                                <div class="result-item full-width" id="res-s3-key-container" style="display: none;">
+                                    <span class="result-label">S3 Object Key:</span>
+                                    <code class="result-code" id="res-s3-key">uploads/uuid-image-name.jpg</code>
+                                </div>
+                                <div class="result-item full-width" id="res-presigned-container" style="display: none;">
+                                    <span class="result-label">S3 Cloud Access (Presigned URL):</span>
+                                    <div class="presigned-access-row">
+                                        <a href="#" id="res-presigned-link" target="_blank" rel="noopener noreferrer" class="endpoint-link presigned-btn">
+                                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                                <polyline points="15 3 21 3 21 9"></polyline>
+                                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                                            </svg>
+                                            Open Presigned Image URL (Valid for 1 Hour)
+                                        </a>
+                                        <span class="presigned-note">Secured with private bucket credentials</span>
+                                    </div>
+                                    <div class="cloud-preview-box" id="res-cloud-preview-box" style="margin-top: 12px;">
+                                        <span class="result-label">Cloud Image Preview (from S3):</span>
+                                        <img id="res-presigned-img" src="" alt="S3 Presigned Image Preview" class="cloud-preview-img">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 3: ALL IMAGES (Paginated Table) -->
+            <!-- =================================================================== -->
+            <div class="dashboard-view-panel" id="view-images">
+                <div class="view-header">
+                    <div>
+                        <h1 class="view-header-title">All Image Records</h1>
+                        <p class="view-header-sub">Complete catalog of uploaded images tracked in Amazon RDS MySQL.</p>
+                    </div>
+                    <button type="button" class="header-action-btn" id="btn-refresh-images">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh
+                    </button>
+                </div>
+
+                <div class="table-card">
+                    <div class="table-toolbar">
+                        <div class="toolbar-title">
+                            <span id="table-total-count-badge">Images</span>
+                        </div>
+                        <div class="toolbar-filters">
+                            <label for="filter-per-page" style="font-size: 0.85rem; color: var(--text-muted);">Rows per page:</label>
+                            <select id="filter-per-page" class="select-filter">
+                                <option value="10" selected>10</option>
+                                <option value="25">25</option>
+                                <option value="50">50</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Image</th>
+                                    <th>Filename</th>
+                                    <th>Image ID</th>
+                                    <th>Upload Date</th>
+                                    <th>Original Size</th>
+                                    <th>Status</th>
+                                    <th>Processed Size</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="all-images-table-body">
+                                <tr>
+                                    <td colspan="8" class="empty-state">
+                                        <div class="empty-state-title">Loading images...</div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Pagination Controls -->
+                    <div class="pagination-bar">
+                        <div class="pagination-info" id="pagination-info-text">
+                            Showing 0 of 0 records
+                        </div>
+                        <div class="pagination-controls" id="pagination-controls">
+                            <button type="button" class="btn-page" id="btn-page-prev" disabled>&larr; Prev</button>
+                            <span id="page-numbers-container" style="display: flex; gap: 4px;"></span>
+                            <button type="button" class="btn-page" id="btn-page-next" disabled>Next &rarr;</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 4: PROCESSING RESULTS (Comparison Cards Gallery) -->
+            <!-- =================================================================== -->
+            <div class="dashboard-view-panel" id="view-results">
+                <div class="view-header">
+                    <div>
+                        <h1 class="view-header-title">Processing Results Gallery</h1>
+                        <p class="view-header-sub">Side-by-side comparisons of original assets versus 800×800 optimized JPEGs.</p>
+                    </div>
+                    <button type="button" class="header-action-btn" id="btn-refresh-results">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Refresh Results
+                    </button>
+                </div>
+
+                <div class="results-grid" id="results-gallery-container">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- =================================================================== -->
+            <!-- VIEW 5: SYSTEM HEALTH -->
+            <!-- =================================================================== -->
+            <div class="dashboard-view-panel" id="view-health">
+                <div class="view-header">
+                    <div>
+                        <h1 class="view-header-title">System Health & Diagnostics</h1>
+                        <p class="view-header-sub">Live operational connectivity of cloud services across Mumbai (ap-south-1).</p>
+                    </div>
+                    <button type="button" class="header-action-btn" id="btn-recheck-health">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <polyline points="23 4 23 10 17 10"></polyline>
+                            <path d="M20.49 15a9 9 0 1 1-2.12-9.36L23 10"></path>
+                        </svg>
+                        Check Health
+                    </button>
+                </div>
+
+                <div class="cards-grid" style="margin-bottom: 24px;">
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-tag tag-active">Flask Backend</span>
+                            <span class="status-badge status-badge-completed" id="health-flask-badge">Healthy</span>
+                        </div>
+                        <h3 class="card-title">Flask Application Core</h3>
+                        <p class="card-text">Python 3.12 WSGI application runtime executing in development mode.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-tag tag-active">Database Tier</span>
+                            <span class="status-badge status-badge-completed" id="health-db-badge">Checking...</span>
+                        </div>
+                        <h3 class="card-title">Amazon RDS MySQL</h3>
+                        <p class="card-text">Private MySQL instance (image-preprocessing-db) on port 3306.</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-tag tag-active">Storage Tier</span>
+                            <span class="status-badge status-badge-completed" id="health-s3-badge">Active</span>
+                        </div>
+                        <h3 class="card-title">Amazon S3 Storage</h3>
+                        <p class="card-text">Bucket: aws-project-2515 (Asia Pacific - Mumbai ap-south-1).</p>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <span class="card-tag tag-active">Serverless Tier</span>
+                            <span class="status-badge status-badge-completed">Active</span>
+                        </div>
+                        <h3 class="card-title">AWS Lambda Pipeline</h3>
+                        <p class="card-text">Triggered automatically by S3 ObjectCreated events in uploads/.</p>
+                    </div>
+                </div>
+
+                <!-- Raw JSON diagnostics box -->
+                <div class="table-card" style="padding: 20px;">
+                    <h3 style="font-size: 1rem; margin-bottom: 12px; font-weight: 700;">Live <code>/health</code> API Response</h3>
+                    <pre id="raw-health-json" style="background-color: #0f172a; color: #38bdf8; padding: 16px; border-radius: var(--radius-md); overflow-x: auto; font-family: monospace; font-size: 0.85rem;">Checking /health endpoint...</pre>
+                </div>
+            </div>
+
+        </main>
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- IMAGE DETAILS & COMPARISON MODAL -->
+    <!-- =================================================================== -->
+    <div class="modal-backdrop" id="image-details-modal">
+        <div class="modal-dialog">
+            <div class="modal-header">
+                <div class="modal-title-wrap">
+                    <h3 class="modal-title" id="modal-filename">Image Details</h3>
+                    <span class="status-badge" id="modal-status-badge">COMPLETED</span>
+                </div>
+                <button type="button" class="btn-modal-close" id="btn-modal-close" aria-label="Close dialog">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Savings Banner (File size reduction) -->
+                <div class="savings-banner" id="modal-savings-banner" style="display: none;">
+                    <div>
+                        <div class="savings-label">Optimization Performance</div>
+                        <span style="font-size: 0.85rem; color: var(--text-secondary);" id="modal-savings-detail">Reduction formula applied</span>
+                    </div>
+                    <div class="savings-value" id="modal-savings-value">0% Saved</div>
+                </div>
+
+                <!-- Side-by-Side Comparison -->
+                <div class="modal-comp-grid">
+                    <!-- Column 1: Original Asset -->
+                    <div class="modal-side-col">
+                        <div class="side-header">
+                            <span class="side-title">Original Asset</span>
+                            <span class="preview-badge" id="modal-orig-format">PNG</span>
+                        </div>
+                        <div class="modal-img-container">
+                            <img id="modal-orig-img" src="" alt="Original Image" class="modal-img-preview">
+                        </div>
+                        <table class="modal-meta-table">
+                            <tr>
+                                <td>Dimensions:</td>
+                                <td class="val" id="modal-orig-dim">-</td>
+                            </tr>
+                            <tr>
+                                <td>File Size:</td>
+                                <td class="val" id="modal-orig-size">-</td>
+                            </tr>
+                            <tr>
+                                <td>S3 Key:</td>
+                                <td class="val" id="modal-orig-key">-</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- Column 2: Processed Asset -->
+                    <div class="modal-side-col">
+                        <div class="side-header">
+                            <span class="side-title">Processed Asset (800×800 JPEG)</span>
+                            <span class="preview-badge" id="modal-proc-format">JPEG</span>
+                        </div>
+                        <div class="modal-img-container" id="modal-proc-container">
+                            <img id="modal-proc-img" src="" alt="Processed Image" class="modal-img-preview">
+                            <div class="pending-state-box" id="modal-proc-pending-state" style="display: none;">
+                                <div class="empty-state-title" id="modal-proc-pending-title">Processing in Progress</div>
+                                <p style="font-size: 0.85rem;" id="modal-proc-pending-text">The Lambda function is processing this asset.</p>
+                            </div>
+                        </div>
+                        <table class="modal-meta-table">
+                            <tr>
+                                <td>Dimensions:</td>
+                                <td class="val" id="modal-proc-dim">-</td>
+                            </tr>
+                            <tr>
+                                <td>File Size:</td>
+                                <td class="val" id="modal-proc-size">-</td>
+                            </tr>
+                            <tr>
+                                <td>S3 Key:</td>
+                                <td class="val" id="modal-proc-key">-</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Comprehensive Processing Info Table -->
+                <h4 style="font-size: 0.95rem; font-weight: 700; margin-bottom: 10px;">Lifecycle Metadata</h4>
+                <table class="modal-meta-table" style="background-color: #ffffff;">
+                    <tr>
+                        <td style="width: 25%;">Image ID (UUID):</td>
+                        <td class="val" id="modal-meta-id">-</td>
+                    </tr>
+                    <tr>
+                        <td>S3 Bucket:</td>
+                        <td class="val" id="modal-meta-bucket">-</td>
+                    </tr>
+                    <tr>
+                        <td>Ingested Timestamp:</td>
+                        <td class="val" id="modal-meta-created">-</td>
+                    </tr>
+                    <tr>
+                        <td>Completed Timestamp:</td>
+                        <td class="val" id="modal-meta-completed">-</td>
+                    </tr>
+                    <tr id="modal-error-row" style="display: none;">
+                        <td style="color: var(--error-red); font-weight: 700;">Failure Diagnostic:</td>
+                        <td class="val" style="color: var(--error-red);" id="modal-meta-error">-</td>
+                    </tr>
+                </table>
+            </div>
+
+            <div class="modal-footer">
+                <a href="#" id="modal-orig-link" target="_blank" rel="noopener noreferrer" class="btn btn-remove" style="text-decoration: none; color: inherit; display: none;">
+                    Open Raw in S3 &rarr;
+                </a>
+                <a href="#" id="modal-proc-link" target="_blank" rel="noopener noreferrer" class="btn btn-browse" style="text-decoration: none; display: none;">
+                    Open Processed in S3 &rarr;
+                </a>
+                <button type="button" class="btn btn-upload" id="btn-modal-dismiss" style="width: auto; padding: 8px 18px;">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container footer-container">
+            <p>&copy; 2026 Automated Image Preprocessing System Using AWS. Built with Flask 3.x, Boto3, Pillow, and Amazon RDS MySQL.</p>
+            <div class="footer-links">
+                <a href="/health">Health API</a>
+                <span>•</span>
+                <span>Python 3.12</span>
+                <span>•</span>
+                <span>AWS ap-south-1</span>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+</body>
+</html>

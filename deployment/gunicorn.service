@@ -1,0 +1,26 @@
+[Unit]
+Description=Gunicorn WSGI Application Server for AWS Image Preprocessing
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+Group=ec2-user
+WorkingDirectory=/var/www/aws-image-preprocessing
+Environment="PATH=/var/www/aws-image-preprocessing/venv/bin:/usr/local/bin:/usr/bin:/bin"
+Environment="FLASK_ENV=production"
+EnvironmentFile=-/var/www/aws-image-preprocessing/.env
+ExecStart=/var/www/aws-image-preprocessing/venv/bin/gunicorn --config deployment/gunicorn.conf.py wsgi:app
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=30
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=image-prep-gunicorn
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target
+
